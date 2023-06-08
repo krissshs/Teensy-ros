@@ -21,7 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'transmitter = teensy_com.publisher:main',
-            'reciever = teensy_com.subscriber:main'
+            'mtr_cmd_sim = teensy_com.mtr_cmd_sim:main'
         ],
     },
 )
