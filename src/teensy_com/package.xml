@@ -3,7 +3,7 @@
 <package format="3">
   <name>teensy_com</name>
   <version>0.0.0</version>
-  <description>Program publishes Teensy serial messages over topic</description>
+  <description>Program publishes Teensy serial messages over teensy_topic and writes messages heard on mtr_cmd_topic to Teensy serial. In addition to that, program reads GPS and compass data and publishes it over gps_topic.</description>
   <maintainer email="kriss-aleksandrs.vasermans@rtu.lv">Krišs</maintainer>
   <license>TODO: License declaration</license>
 

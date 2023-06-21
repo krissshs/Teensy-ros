@@ -1,8 +1,7 @@
-String GPS = "GPS:";
-String COMPASS = "COMPASS:";
-String REMOTE = "REMOTE:";
-
 char mode = 'm';
+
+int8_t angle1, angle2;
+uint8_t pow1, pow2;
 
 int startTimeGPS = millis();
 int startTimeCOMPASS = millis();
@@ -13,27 +12,26 @@ int startTimeCOMPASS = millis();
 #define btn_pressed !digitalRead(btn_pin)
 
 
-void blinkLED(char x) {
+void blinkLED(char x, char pwm) {
   for (char i=0; i<x; i++) {
-    digitalWrite(LED1, HIGH);
+    analogWrite(LED1, pwm);
     delay(100);
-    digitalWrite(LED1, LOW);
+    analogWrite(LED1, 0);
     delay(100);
   }
 }
 
-int8_t* decode_MtrCmd(String MtrCmdString) {
-  int8_t* angles = new int8_t[2];
+bool decode_MtrCmd(String MtrCmdString) {
 
-  int8_t angle1, angle2;
-  if (sscanf(MtrCmdString.c_str(), "MTR_CMD:(%hhd;%hhd)", &angle1, &angle2) == 2) {
-    angles[0] = angle1;
-    angles[1] = angle2;
-  } else {
-    delete[] angles;
-    angles = nullptr;
+  if (sscanf(MtrCmdString.c_str(), "MTR_CMD:(%hhd;%hhu)(%hhd;%hhu)", &angle1, &pow1, &angle2, &pow2) != 4) {
+    // If fails, set to zeros
+    pow1 = 0;
+    pow2 = 0;
+    angle1 = 0;
+    angle2 = 0;
+    return false;
   }
-  return angles;
+  return true;
 }
 
 void setup() {
@@ -45,17 +43,6 @@ void setup() {
 }
 bool btn_hold = false;
 void loop() {
-  // Output GPS data every 1 second
-  if (millis() - startTimeGPS > 1000) {
-    Serial.println(GPS + "gps_placeholder");
-    startTimeGPS = millis();
-  }
-
-  // Output COMPASS every 0.5 seconds
-  if (millis() - startTimeCOMPASS > 500) {
-    Serial.println(COMPASS + "compass_placeholder");
-    startTimeCOMPASS = millis();
-  }
 
   // If btn is pressed, change auto/manual state
   // if in auto mode, turn on led
@@ -79,11 +66,12 @@ void loop() {
   if (Serial.available() > 0) {
     String input = Serial.readStringUntil('\n');
 
-    int8_t* angles = decode_MtrCmd(input);
-
-    // if angles are extracted correctly, blink LED
-    if (angles[0] && angles[1]) {
-      blinkLED(5);
+    // Set pow1, pow2, angle1, angle2 variables
+    if (decode_MtrCmd(input)) {
+      // blink LED with pow1 intensity
+      blinkLED(5, pow1);
     }
+
+    
   }
 }

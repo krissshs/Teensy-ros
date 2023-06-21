@@ -1,15 +1,15 @@
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import String, Int32
+from std_msgs.msg import String
 
 import serial
 import serial.tools.list_ports
+import threading
 
-PUBLISH_TIMEOUT = 0.1
-BAUDRATE = 115200
+BAUDRATE_TEENSY = 115200
 
 class TeensyNode(Node):
-    def __init__(self, teensy_port, timer_period=0.1, baudrate=9600):
+    def __init__(self, teensy_port, baudrate=9600):
         super().__init__('Teensy_node')
 
         self.publisher_ = self.create_publisher(String, 'teensy_topic', 10)
@@ -28,18 +28,21 @@ class TeensyNode(Node):
             self.destroy_node()
             exit()
 
-        self.timer_period = timer_period
-        self.timer = self.create_timer(self.timer_period, self.timer_callback)
+        # Read teensy serial on parallel thread
+        listener_thread = threading.Thread(target=self.serial_listener, daemon=True)
+        listener_thread.start()
+    
+    def serial_listener(self):
+        while True:
+            if self.teensy.in_waiting:
+                read_line = self.teensy.readline().decode("utf-8").rstrip()
+                if len(read_line) > 0:
+                    self.publish_msg(read_line)
         
     def listener_callback(self, msg):
         self.get_logger().info(f"Recieved: {msg.data}")
         mtr_cmd_string = f"{msg.data}"
         self.teensy.write(bytes(mtr_cmd_string.encode("utf-8")))
-
-    def timer_callback(self):
-        read_line = self.teensy.readline().decode("utf-8").rstrip()
-        if len(read_line) > 0:
-            self.publish_msg(read_line)
 
     def publish_msg(self, msg):
         message = String()
@@ -47,20 +50,20 @@ class TeensyNode(Node):
         self.publisher_.publish(message)
         self.get_logger().info(f'Publishing: {message.data}')
 
+
 def main(args=None):
     rclpy.init(args=args)
 
-    #========================Find teensy port======================= 
+    #=================Find teensy and GPS port======================= 
     teensy_port = "/dev/"
     all_ports = serial.tools.list_ports.comports(include_links=True)
     for port in all_ports:
         if port.manufacturer == "Teensyduino":
             teensy_port += port.name
-            break
+        
     #================================================================
     
-    teensy_node = TeensyNode(teensy_port, PUBLISH_TIMEOUT, BAUDRATE)
-
+    teensy_node = TeensyNode(teensy_port, BAUDRATE_TEENSY)
     rclpy.spin(teensy_node)
     rclpy.shutdown()
 

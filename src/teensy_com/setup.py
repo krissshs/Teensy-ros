@@ -20,8 +20,9 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'transmitter = teensy_com.publisher:main',
-            'mtr_cmd_sim = teensy_com.mtr_cmd_sim:main'
+            'teensy = teensy_com.teensy_publisher:main',
+            'gps_publisher = teensy_com.gps_publisher:main',
+            'simulator = teensy_com.simulator:main'
         ],
     },
 )
