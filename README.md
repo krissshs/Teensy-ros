@@ -28,5 +28,5 @@ source install/setup.bash && ros2 run teensy_com gps_publisher
 ```
 
 ## Change baudrate and frequency
-To change Teensy baudrate, navigate to ```src/teensy_com/publisher.py``` and change ```BAUDRATE_TEENSY```.
+To change Teensy baudrate, navigate to ```src/teensy_com/teensy_publisher.py``` and change ```BAUDRATE_TEENSY```.
 
