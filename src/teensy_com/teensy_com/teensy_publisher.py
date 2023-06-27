@@ -54,7 +54,7 @@ class TeensyNode(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    #=================Find teensy and GPS port======================= 
+    #=================Find teensy port=============================== 
     teensy_port = "/dev/"
     all_ports = serial.tools.list_ports.comports(include_links=True)
     for port in all_ports:

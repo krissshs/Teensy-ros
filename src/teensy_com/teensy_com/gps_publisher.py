@@ -6,6 +6,15 @@ import serial
 import serial.tools.list_ports
 import threading
 
+# See https://anavs.com/knowledgebase/nmea-format/
+# Publish:
+GNGGA = False
+GNGSA = False
+GPGSV = False
+GLGSV = False
+GNRMC = True
+GNVTG = False
+
 class GPS_Node(Node):
     def __init__(self, gps_port):
         super().__init__('GPS_node')
@@ -23,7 +32,6 @@ class GPS_Node(Node):
             self.destroy_node()
             exit()
 
-        #self.timer = self.create_timer(self.timer_period, self.timer_callback)
         # Read GPS serial on parallel thread
         listener_thread = threading.Thread(target=self.serial_listener, daemon=True)
         listener_thread.start()
@@ -32,18 +40,25 @@ class GPS_Node(Node):
         while True:
             if self.gps_module.in_waiting:
                 read_line = self.gps_module.readline().decode("utf-8").rstrip()
-                # GNGGA - time, lat, lon
-                # GNVTG - compass
-                # Alternative - use GNRMC. RMC - Recommended minimum specific GNSS data (time, coords, sog, cog, date, magnetic variation)
-                if (read_line.startswith("$GNGGA") or read_line.startswith("$GNVTG")):
+                # See https://anavs.com/knowledgebase/nmea-format/
+                if read_line.startswith("$GNGGA") and GNGGA:
                     self.publish_msg(read_line)
-
+                elif read_line.startswith("$GNGSA") and GNGSA:
+                    self.publish_msg(read_line)
+                elif read_line.startswith("$GPGSV") and GPGSV:
+                    self.publish_msg(read_line)
+                elif read_line.startswith("$GLGSV") and GLGSV:
+                    self.publish_msg(read_line)
+                elif read_line.startswith("$GNRMC") and GNRMC:
+                    self.publish_msg(read_line)
+                elif read_line.startswith("$GNVTG") and GNVTG:
+                    self.publish_msg(read_line)
+                
     def publish_msg(self, msg):
         message = String()
         message.data = msg
         self.publisher_.publish(message)
         self.get_logger().info(f'Publishing: {message.data}')
-
 
 def main(args=None):
     rclpy.init(args=args)
@@ -54,13 +69,11 @@ def main(args=None):
     for port in all_ports:
         if port.manufacturer == "PCB one SIA":
             gps_port += port.name
-        
     #================================================================
     
     gps_node = GPS_Node(gps_port)
     rclpy.spin(gps_node)
     rclpy.shutdown()
-
 
 if __name__ == '__main__':
     main()
